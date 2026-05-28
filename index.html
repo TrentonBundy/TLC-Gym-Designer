@@ -985,7 +985,22 @@
     font-family: inherit;
   }
   .login-back:hover { color: var(--ink); }
+
+  #app-version {
+    position: fixed;
+    bottom: 12px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.5px;
+    z-index: 10000;
+    pointer-events: none;
+    user-select: none;
+  }
 </style>
+
+<div id="app-version">V260528-3</div>
 
 <div id="login-overlay">
 
@@ -4017,6 +4032,7 @@ function handleCredentialResponse(response) {
   const email = payload.email || '';
   currentUserEmail = email;
   document.getElementById('login-spinner').style.display = 'none';
+  // Advance to mode picker.
   showStep(2);
 }
 
@@ -4237,8 +4253,8 @@ async function driveRequest(method, path, params = {}, body = null, contentType 
 // Find a folder by name inside a parent. Returns the folder id or null.
 async function findFolder(name, parentId) {
   const safeName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const q = `mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}' and '${parentId}' in parents and trashed = false`;
-  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name,trashed)' });
+  const q = `'${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}'`;
+  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name)' });
   return data.files && data.files.length ? data.files[0].id : null;
 }
 
