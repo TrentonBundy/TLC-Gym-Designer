@@ -4245,8 +4245,8 @@ async function driveRequest(method, path, params = {}, body = null, contentType 
 // Find a folder by name inside a parent. Returns the folder id or null.
 async function findFolder(name, parentId) {
   const safeName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const q = `'${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}'`;
-  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name)' });
+  const q = `mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}' and '${parentId}' in parents and trashed = false`;
+  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name,trashed)' });
   return data.files && data.files.length ? data.files[0].id : null;
 }
 
