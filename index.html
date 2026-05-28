@@ -985,22 +985,7 @@
     font-family: inherit;
   }
   .login-back:hover { color: var(--ink); }
-
-  #app-version {
-    position: fixed;
-    bottom: 12px;
-    left: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-dim);
-    letter-spacing: 0.5px;
-    z-index: 10000;
-    pointer-events: none;
-    user-select: none;
-  }
 </style>
-
-<div id="app-version">V260528-1</div>
 
 <div id="login-overlay">
 
@@ -4030,15 +4015,8 @@ function handleCredentialResponse(response) {
   const payload = decodeJwt(response.credential);
   if (!payload) { showLoginError('Could not verify your account. Please try again.'); return; }
   const email = payload.email || '';
-  const domain = email.split('@')[1] || '';
-  if (domain.toLowerCase() !== ALLOWED_DOMAIN) {
-    if (window.google && window.google.accounts) google.accounts.id.disableAutoSelect();
-    showLoginError(`Access denied. Only @${ALLOWED_DOMAIN} accounts are allowed. (Signed in as ${email})`);
-    return;
-  }
   currentUserEmail = email;
   document.getElementById('login-spinner').style.display = 'none';
-  // Advance to mode picker.
   showStep(2);
 }
 
@@ -4102,7 +4080,6 @@ function initGoogleAuth() {
     callback: handleCredentialResponse,
     auto_select: false,
     cancel_on_tap_outside: false,
-    hd: ALLOWED_DOMAIN   // hint to Google to only show @tlctulsa.org accounts
   });
 
   // Render the "Sign in with Google" button inside the overlay.
@@ -4260,8 +4237,8 @@ async function driveRequest(method, path, params = {}, body = null, contentType 
 // Find a folder by name inside a parent. Returns the folder id or null.
 async function findFolder(name, parentId) {
   const safeName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const q = `'${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}'`;
-  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name)' });
+  const q = `mimeType = 'application/vnd.google-apps.folder' and name = '${safeName}' and '${parentId}' in parents and trashed = false`;
+  const data = await driveRequest('GET', '/drive/v3/files', { q, pageSize: 1, fields: 'files(id,name,trashed)' });
   return data.files && data.files.length ? data.files[0].id : null;
 }
 
