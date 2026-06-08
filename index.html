@@ -18,6 +18,11 @@
     --accent-deep: #0a1729;       /* deepest navy for shadows/contrast */
     --gold: #f0ae2b;              /* signature gold — primary text accent */
     --gold-2: #d99820;            /* darker gold for hover/borders */
+    /* Modal accent — soft seafoam teal. Used by the tutorial, About, and
+       admin modals (which share the .tutorial-* styling) instead of gold,
+       so those surfaces read calmer while the rest of the app keeps gold. */
+    --tut-accent: #f0ae2b;        /* light seafoam — modal headings/accents 5fc6ba - d96b27*/
+    --tut-accent-deep: #2e4978;   /* deeper teal — modal borders/hover 379b8f*/
     --paper-tint: #1f3962;        /* lifted navy used where paper-tint was */
     --danger: #d96050;
     --ok: #6fb985;
@@ -350,7 +355,7 @@
     background-color: var(--panel);
     background-image:
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.65 0 0 0 0 0.85 0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    border: 1px solid var(--gold-2);
+    border: 1px solid var(--tut-accent-deep);
     border-radius: 8px;
     width: 100%;
     max-width: 560px;
@@ -374,7 +379,7 @@
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 22px;
     font-weight: 700;
-    color: var(--gold);
+    color: var(--tut-accent);
     letter-spacing: 0.3px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   }
@@ -392,8 +397,8 @@
     transition: all 0.15s;
   }
   .tutorial-close:hover {
-    color: var(--gold);
-    border-color: var(--gold);
+    color: var(--tut-accent);
+    border-color: var(--tut-accent);
   }
 
   .tutorial-body {
@@ -415,7 +420,7 @@
   .tutorial-body h3 {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 19px;
-    color: var(--gold);
+    color: var(--tut-accent);
     font-weight: 700;
     margin-bottom: 12px;
     letter-spacing: 0.2px;
@@ -441,23 +446,23 @@
     top: 14px;
     width: 5px;
     height: 5px;
-    background: var(--gold);
+    background: var(--tut-accent);
     border-radius: 50%;
   }
   .tutorial-body kbd {
     background: var(--panel-2);
-    border: 1px solid var(--gold-2);
+    border: 1px solid var(--tut-accent-deep);
     border-radius: 3px;
     padding: 1px 6px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: var(--gold);
+    color: var(--tut-accent);
     margin: 0 2px;
     font-weight: 600;
   }
   .tutorial-body .callout {
     background: var(--panel-2);
-    border-left: 3px solid var(--gold);
+    border-left: 3px solid var(--tut-accent);
     padding: 10px 14px;
     margin: 12px 0;
     border-radius: 0 4px 4px 0;
@@ -478,8 +483,8 @@
     border-radius: 2px;
     transition: background 0.2s;
   }
-  .tutorial-progress .dot.active { background: var(--gold); }
-  .tutorial-progress .dot.done { background: var(--gold-2); }
+  .tutorial-progress .dot.active { background: var(--tut-accent); }
+  .tutorial-progress .dot.done { background: var(--tut-accent-deep); }
 
   .tutorial-footer {
     padding: 14px 22px 18px;
@@ -513,6 +518,21 @@
     background: var(--panel-2);
     border-color: var(--line);
     color: var(--ink);
+  }
+  /* Primary button inside any modal footer (tutorial Next/Finish, About
+     "Got it", admin Save) uses the teal accent instead of the global gold
+     .btn.primary, so these surfaces stay consistent with the teal headings. */
+  .tutorial-footer .btn.primary,
+  #admin-unlock.btn.primary {
+    background: var(--tut-accent);
+    color: #072420;
+    border-color: var(--tut-accent-deep);
+  }
+  .tutorial-footer .btn.primary:hover,
+  #admin-unlock.btn.primary:hover {
+    background: var(--tut-accent-deep);
+    color: #04140f;
+    border-color: var(--tut-accent-deep);
   }
 
   /* === Admin button (sits next to Tutorial button) === */
@@ -709,7 +729,7 @@
     transition: border-color 0.15s;
   }
   .admin-grid input[type=number]:focus {
-    border-color: var(--gold);
+    border-color: var(--tut-accent);
   }
 
   .control-row {
@@ -986,6 +1006,58 @@
   }
   .login-back:hover { color: var(--ink); }
 
+  /* Start-screen "?" help button — fixed top-right corner. Opens the About
+     modal that explains what the tool is and how projects/revisions work.
+     z-index sits above the login overlay (9999) so it persists across the
+     sign-in and mode-select steps. */
+  .about-btn {
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 10000;
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 38px; padding: 0 14px 0 12px;
+    border-radius: 19px;
+    background: rgba(14, 28, 51, 0.55);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--tut-accent-deep);
+    color: var(--tut-accent);
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.6px; text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.15s;
+  }
+  .about-btn:hover {
+    background: var(--tut-accent); color: #072420; border-color: var(--tut-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(95, 198, 186, 0.35);
+  }
+  .about-btn .q {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic; font-size: 13px; font-weight: 700; line-height: 1;
+  }
+
+  /* The About modal reuses the .tutorial-* styling. This extra rule just adds
+     a code-style block for the filename / revision example. */
+  .tutorial-body .name-example {
+    background: var(--accent-deep);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--ink);
+    overflow-x: auto;
+  }
+  .tutorial-body .name-example .folder { color: var(--accent-2); }
+  .tutorial-body .name-example .rev { color: var(--tut-accent); font-weight: 700; }
+  .tutorial-body .name-example .muted { color: var(--ink-dim); }
+
   #app-version {
     position: fixed;
     bottom: 12px;
@@ -1003,6 +1075,14 @@
 <div id="app-version">V260528-3</div>
 
 <div id="login-overlay">
+
+  <!-- Help "?" button: fixed top-right, persists across the login steps.
+       Opens the About modal explaining the tool, Drive projects, and the
+       revision (R0, R1, …) naming convention. -->
+  <button class="about-btn" id="about-btn" title="What is this tool?" aria-label="About this tool">
+    <span class="q">?</span>
+    <span>About</span>
+  </button>
 
   <!-- Step 1: Sign in -->
   <div class="login-card" id="login-step-1">
@@ -1332,6 +1412,73 @@
       <div class="nav-btns">
         <button class="btn" id="tutorial-back">Back</button>
         <button class="btn primary" id="tutorial-next">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<!-- Start-screen explainer. Reuses the .tutorial-* styling but is a single
+     scrollable pane (no step navigation). Opened by the "?" / About button on
+     the login overlay. z-index set above the About button (10000) so the
+     button doesn't float over the modal while it's open. -->
+<div class="tutorial-overlay" id="about-overlay" role="dialog" aria-modal="true" aria-labelledby="about-title" style="z-index:10001;">
+  <div class="tutorial-modal">
+    <div class="tutorial-header">
+      <h2 id="about-title">About the Gym Designer</h2>
+      <button class="tutorial-close" id="about-close" aria-label="Close about">×</button>
+    </div>
+    <div class="tutorial-body">
+      <div class="tutorial-step-label">What this tool is for</div>
+      <h3>Plan gym events digitally</h3>
+      <p>The TLC Gym Designer lets church staff lay out events in the gym
+      before setup day — arranging tables, chairs, the stage, and other
+      equipment, and checking seat counts and inventory as you go. Access is
+      limited to church Google accounts: sign in with a
+      <strong>tlctulsa.org</strong> or <strong>lcatulsa.org</strong> address.</p>
+
+      <div class="tutorial-step-label" style="margin-top:18px;">Projects &amp; Google Drive</div>
+      <h3>Your work saves to the church Drive</h3>
+      <p>When you choose <strong>New Project</strong> and name it, the app
+      creates a folder with that name in the church's shared Google Drive.
+      From then on, every layout you save for that event is stored inside its
+      folder, so you (or anyone on the team) can reopen it later from
+      <strong>Open Existing Project</strong>.</p>
+      <p>Each time you save, the app writes <em>two</em> files under the same
+      revision name — a <strong>.json</strong> (the editable layout data) and a
+      <strong>.pdf</strong> (a printable floor plan).</p>
+
+      <div class="tutorial-step-label" style="margin-top:18px;">Naming &amp; revisions</div>
+      <h3>Names and revision numbers are automatic</h3>
+      <p>You never have to name individual save files — the app does it for
+      you from the project name plus a revision tag. Say you create a project
+      called <strong>Easter Sunday 2025</strong>:</p>
+      <div class="name-example">
+        📁 <span class="folder">Easter Sunday 2025/</span><br>
+        &nbsp;&nbsp;&nbsp;Easter Sunday 2025 <span class="rev">R0</span>.json&nbsp;&nbsp;<span class="muted">← first save</span><br>
+        &nbsp;&nbsp;&nbsp;Easter Sunday 2025 <span class="rev">R0</span>.pdf<br>
+        &nbsp;&nbsp;&nbsp;Easter Sunday 2025 <span class="rev">R1</span>.json&nbsp;&nbsp;<span class="muted">← next save</span><br>
+        &nbsp;&nbsp;&nbsp;Easter Sunday 2025 <span class="rev">R1</span>.pdf<br>
+        &nbsp;&nbsp;&nbsp;Easter Sunday 2025 <span class="rev">R2</span>.json&nbsp;&nbsp;<span class="muted">…</span>
+      </div>
+      <p><strong>R0 means Revision 0</strong> — your very first saved version.
+      The number bumps up by one every time you save again (R0 → R1 → R2 …),
+      so nothing gets overwritten and you keep a full history. Need to go back
+      to an earlier arrangement? Just load that revision from the
+      <strong>Saved Layouts</strong> list.</p>
+
+      <div class="callout">Prefer to experiment without saving to Drive? Pick
+      <strong>Free Play</strong> on the start screen. Nothing syncs — use
+      Export JSON if you want to keep your work.</div>
+
+      <p style="margin-top:14px;">Once you're inside the designer, click the
+      <strong>Tutorial</strong> button in the top-left corner of the canvas for
+      a step-by-step walkthrough of building a layout.</p>
+    </div>
+    <div class="tutorial-footer">
+      <span class="step-counter">Tulsa Lighthouse Church</span>
+      <div class="nav-btns">
+        <button class="btn primary" id="about-done" style="width:auto;min-width:92px;padding:8px 16px;">Got it</button>
       </div>
     </div>
   </div>
@@ -5064,110 +5211,135 @@ const TUTORIAL_STEPS = [
     label: 'Welcome',
     title: 'Welcome to the Gym Designer',
     body: `
-      <p>This is a 3D layout planner for the Tulsa Lighthouse Church gym.
-      Use it to lay out tables, chairs, stages, and other equipment for
-      services, dinners, weddings, and other events — and to see exactly
-      how many seats your arrangement provides before the day arrives.</p>
-      <p>The semi-transparent <strong>double doors</strong> on the west
-      side of the gym and the <strong>compass</strong> in the bottom-right
-      corner are fixed orientation aids — they're always there to help you
-      stay oriented in the floor plan.</p>
-      <p>This quick tour will walk you through the basics. You can reopen
-      it any time from the <strong>Tutorial</strong> button in the top-left
-      corner of the canvas.</p>
+      <p>This is the layout designer for the Tulsa Lighthouse Church gym.
+      Use it to arrange tables, chairs, the stage, and other equipment for
+      services, dinners, weddings, and other events &mdash; and watch your
+      seat count update as you build.</p>
+      <p>This walkthrough covers the whole process: adding equipment,
+      moving it around, changing your view, reading the live counts, and
+      saving your work. You can reopen it any time from the
+      <strong>Tutorial</strong> button in the top-left corner of the canvas.</p>
+      <div class="callout">The gold <strong>North arrow</strong> (shown on the
+      floor in Top-Down view) keeps you oriented &mdash; "up" on screen is
+      north in the gym.</div>
     `
   },
   {
     label: 'Step 1',
-    title: 'Adding Equipment to the Gym',
+    title: 'Add equipment to the floor',
     body: `
       <p>The <strong>Equipment</strong> list on the left panel holds every
-      item you can place — round tables, rectangle tables, chairs, the stage
-      riser, and more.</p>
+      item you can place &mdash; round tables, rectangle tables, chairs, the
+      stage riser, and more.</p>
       <ul>
         <li><strong>Click an item</strong> in the list and it drops onto the
-        gym floor at center.</li>
-        <li>Tables that include chairs (like the 6′ Round) automatically
-        bring their chairs with them, arranged around the table.</li>
-        <li>You can place as many copies as you need — each one becomes its
-        own movable object on the floor.</li>
+        gym floor near the center of your current view.</li>
+        <li>Tables that come with chairs (like the 6&prime; Round) bring their
+        chairs automatically, arranged around the table.</li>
+        <li>Click as many times as you need &mdash; each click adds another
+        copy as its own movable object. Repeat clicks land on nearby open
+        tiles so they don't stack on top of each other.</li>
       </ul>
-      <div class="callout">Tip: start with the big anchors first — stage,
-      head tables — then fill in the rest of the seating around them.</div>
+      <div class="callout">Tip: place the big anchors first &mdash; stage,
+      head tables &mdash; then fill in seating around them.</div>
     `
   },
   {
     label: 'Step 2',
-    title: 'Manipulating Equipment & the View',
+    title: 'Select, move, and arrange',
     body: `
-      <p>Once an item is on the floor, click it to select it. The right
-      panel shows its details and gives you controls to rotate, duplicate,
-      or delete it.</p>
-      <p><strong>Moving items:</strong> click and drag any item to slide it
-      across the floor. Positions snap to the floor's tile grid for clean
-      alignment.</p>
-      <p><strong>Keyboard shortcuts:</strong></p>
+      <p><strong>Click an item</strong> on the floor to select it. The right
+      panel shows its details plus buttons to rotate, duplicate, or delete it.
+      <kbd>Shift</kbd>+<kbd>click</kbd> adds more items to the selection so you
+      can move a whole group at once.</p>
+      <p><strong>Move:</strong> drag any selected item to slide it across the
+      floor. Positions snap to the floor's tile grid for clean alignment.</p>
+      <p><strong>Keyboard shortcuts</strong> (with something selected):</p>
       <ul>
-        <li><kbd>R</kbd> rotate the selected item by 15°</li>
-        <li><kbd>Del</kbd> delete the selected item</li>
-        <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> copy and paste</li>
-        <li><kbd>Shift</kbd>+<kbd>click</kbd> to select multiple items at once</li>
-      </ul>
-      <p><strong>Moving the camera:</strong></p>
-      <ul>
-        <li><kbd>Drag</kbd> the empty floor to rotate the view</li>
-        <li><kbd>Wheel</kbd> to pan</li>
-        <li>Use the <strong>View</strong> buttons (Top-Down / Isometric /
-        Ground Level) on the left panel for instant preset angles.</li>
+        <li><kbd>R</kbd> &mdash; rotate by 15&deg;</li>
+        <li><kbd>Del</kbd> &mdash; remove the selected item(s)</li>
+        <li><kbd>D</kbd> &mdash; duplicate</li>
+        <li><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&rarr;</kbd> &mdash; nudge a small step</li>
+        <li><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> &mdash; copy &amp; paste</li>
+        <li><kbd>Ctrl</kbd>+<kbd>A</kbd> &mdash; select everything</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> &mdash; undo &amp; redo</li>
+        <li><kbd>Esc</kbd> &mdash; clear the selection</li>
       </ul>
     `
   },
   {
     label: 'Step 3',
-    title: 'Live Seating & Equipment Counts',
+    title: 'Move the camera &amp; switch views',
     body: `
-      <p>The <strong>Capacity</strong> card on the right panel updates in
-      real time as you build your layout:</p>
+      <p>You can look at the floor from any angle:</p>
       <ul>
-        <li><strong>Seats</strong> — total chairs on the floor, including
-        chairs that come with tables and standalone chairs you add.</li>
-        <li><strong>Tables</strong> — total tables placed, regardless of
-        type or size.</li>
+        <li><kbd>Drag</kbd> an empty part of the floor to <strong>rotate</strong> the view.</li>
+        <li><kbd>Mouse&nbsp;wheel</kbd> to <strong>pan</strong> across the floor.</li>
       </ul>
-      <p>You'll also see a <strong>SEATS</strong> readout in the top-right
-      of the canvas itself, so the count stays visible even while you're
-      working with the right panel collapsed or scrolled.</p>
-      <p>The <strong>Inventory</strong> card on the left panel shows the
-      church's resource pools — chairs, round tables, rectangle tables, and
-      stage risers — with a live used/limit count and a colored bar that
-      turns yellow as you near the cap and red when you hit it.</p>
-      <p>Each piece of furniture pulls from one or more pools when placed:
-      a 6′ round table with chairs uses one round-table slot AND eight
-      chair slots. If chairs run out before tables do, the table still
-      places — just with fewer chairs attached.</p>
-      <div class="callout">Use this to quickly compare arrangements — for
-      example, banquet rounds vs. classroom rows — and pick the one that
-      hits your target capacity without exceeding stock.</div>
+      <p>For instant preset angles, use the <strong>View Cube</strong> in the
+      top-right corner of the canvas:</p>
+      <ul>
+        <li><strong>Top-Down</strong> &mdash; the flat floor-plan view, best for
+        precise placement and the one used on exported PDFs.</li>
+        <li><strong>Ground</strong> &mdash; a low, eye-level view to get a feel
+        for the room from the floor.</li>
+      </ul>
+      <div class="callout">The <strong>hint bar</strong> along the bottom of the
+      canvas always lists the main controls, so you never have to memorize
+      them.</div>
     `
   },
   {
     label: 'Step 4',
-    title: 'Saving & Exporting Layouts',
+    title: 'Watch capacity &amp; inventory',
     body: `
-      <p>When you have an arrangement you like, save it so you can come
-      back to it later or share it with the team.</p>
+      <p>Two panels update live as you build, so you can size an arrangement
+      before setup day:</p>
+      <p>The <strong>Capacity</strong> card on the right panel shows:</p>
       <ul>
-        <li><strong>Save Layout</strong> — type a name (e.g. "Easter Sunday
-        Service") and click <strong>Save</strong>. Your saved layouts appear
-        in the <strong>Saved Layouts</strong> list below, ready to load with
-        a click.</li>
-        <li><strong>Clear All</strong> — wipe the floor and start fresh.</li>
-        <li><strong>Export PDF</strong> — generates a printable PDF with
-        the top-down floor plan and capacity numbers — perfect for handing
-        to volunteers or setup crews.</li>
-        <li><strong>Export JSON</strong> — saves the raw layout data to a
-        file you can back up or share with another computer.</li>
-        <li><strong>Import JSON</strong> — load a layout file someone else
+        <li><strong>Seats</strong> &mdash; every chair on the floor, including
+        chairs that come with tables and standalone chairs.</li>
+        <li><strong>Tables</strong> &mdash; total tables placed, any type.</li>
+      </ul>
+      <p>The <strong>Inventory</strong> card on the left panel tracks the
+      church's actual stock &mdash; chairs, round tables, rectangle tables, and
+      stage risers &mdash; with a live used/limit count and a bar that turns
+      <span style="color:var(--gold);font-weight:700;">yellow</span> as you
+      near the cap and <span style="color:var(--danger);font-weight:700;">red</span>
+      when you hit it.</p>
+      <p>Each piece pulls from one or more pools: a 6&prime; round with chairs
+      uses one round-table slot <em>and</em> eight chair slots. If chairs run
+      out before tables do, the table still places &mdash; just with fewer
+      chairs attached.</p>
+      <div class="callout">Use this to compare arrangements &mdash; banquet
+      rounds vs. classroom rows &mdash; and pick the one that hits your target
+      without exceeding stock.</div>
+    `
+  },
+  {
+    label: 'Step 5',
+    title: 'Save &amp; export your layout',
+    body: `
+      <p>How you save depends on how you started (from the
+      <strong>?</strong> About button on the start screen):</p>
+      <ul>
+        <li><strong>Project mode</strong> &mdash; click <strong>Save to
+        Drive</strong> to store a new revision in your project's Google Drive
+        folder. The file is named automatically &mdash; e.g.
+        <kbd>Easter Sunday 2025 R0</kbd>, then <kbd>R1</kbd>, <kbd>R2</kbd>&hellip;
+        Saved revisions appear under <strong>Saved Layouts</strong>; click one
+        to reload it. <strong>Switch</strong> jumps to another project.</li>
+        <li><strong>Free Play</strong> &mdash; no Drive sync. Use
+        <strong>Export JSON</strong> to keep your work.</li>
+      </ul>
+      <p>Other controls:</p>
+      <ul>
+        <li><strong>Clear All</strong> &mdash; wipe the floor and start fresh.</li>
+        <li><strong>Export PDF</strong> &mdash; a printable top-down floor plan
+        with capacity numbers, ideal for volunteers and setup crews.</li>
+        <li><strong>Export JSON</strong> &mdash; save the raw layout data to a
+        file to back up or share.</li>
+        <li><strong>Import JSON</strong> &mdash; load a layout file someone
         sent you, or restore one from backup.</li>
       </ul>
       <p>That's everything you need to get going. Have fun planning!</p>
@@ -5256,6 +5428,32 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key === 'ArrowLeft') {
     e.preventDefault();
     if (!tutorialBackBtn.disabled) tutorialBackBtn.click();
+  }
+});
+
+//=============================================================================
+// ABOUT MODAL — start-screen explainer ("?" button on the login overlay)
+//=============================================================================
+const aboutOverlay = document.getElementById('about-overlay');
+const aboutOpenBtn = document.getElementById('about-btn');
+const aboutCloseBtn = document.getElementById('about-close');
+const aboutDoneBtn = document.getElementById('about-done');
+
+function openAbout() { aboutOverlay.classList.add('active'); }
+function closeAbout() { aboutOverlay.classList.remove('active'); }
+
+aboutOpenBtn.addEventListener('click', openAbout);
+aboutCloseBtn.addEventListener('click', closeAbout);
+aboutDoneBtn.addEventListener('click', closeAbout);
+// Click the backdrop (outside the modal) to dismiss.
+aboutOverlay.addEventListener('click', (e) => {
+  if (e.target === aboutOverlay) closeAbout();
+});
+// Esc closes the About modal when it's the active one.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && aboutOverlay.classList.contains('active')) {
+    e.preventDefault();
+    closeAbout();
   }
 });
 
