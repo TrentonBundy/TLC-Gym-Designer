@@ -569,6 +569,40 @@
     box-shadow: 0 4px 12px rgba(240, 174, 43, 0.35);
   }
 
+  /* === Exit-to-menu button — top-left HUD, right of Admin === */
+  .exit-menu-btn {
+    position: absolute;
+    top: 12px;
+    left: 238px;       /* offset right of Tutorial (≈110px) + Admin (≈90px) + gap */
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(14, 28, 51, 0.4);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(217, 152, 32, 0.55);
+    color: var(--gold);
+    padding: 8px 12px 8px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    opacity: 0.65;
+    transition: all 0.15s;
+  }
+  .exit-menu-btn:hover {
+    background: rgba(90, 159, 212, 0.2);
+    color: var(--accent-2);
+    border-color: var(--accent-2);
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(90, 159, 212, 0.3);
+  }
+
   /* === Toast host & toasts === */
   .toast-host {
     position: absolute;
@@ -1006,13 +1040,14 @@
   }
   .login-back:hover { color: var(--ink); }
 
-  /* Start-screen "?" help button — fixed top-right corner. Opens the About
+  /* Start-screen "?" help button — fixed bottom-right corner. Opens the About
      modal that explains what the tool is and how projects/revisions work.
      z-index sits above the login overlay (9999) so it persists across the
-     sign-in and mode-select steps. */
+     sign-in and mode-select steps. Placed bottom-right to avoid overlap with
+     the View Cube controls (top-right) once the app is visible. */
   .about-btn {
     position: fixed;
-    top: 20px; right: 20px;
+    bottom: 20px; right: 20px;
     z-index: 10000;
     display: inline-flex; align-items: center; gap: 7px;
     height: 38px; padding: 0 14px 0 12px;
@@ -1072,7 +1107,7 @@
   }
 </style>
 
-<div id="app-version">V260528-3</div>
+<div id="app-version">V260522-4</div>
 
 <div id="login-overlay">
 
@@ -1235,6 +1270,18 @@
         <circle cx="8" cy="8" r="2.4" fill="none" stroke="currentColor" stroke-width="1.2"/>
       </svg>
       <span>Admin</span>
+    </button>
+
+    <!-- Exit to Menu: returns to the mode-picker (step 2) without signing out.
+         The user stays signed in so they can pick a different direction
+         (new project, existing project, free play, layouts) without a full
+         Google re-authentication cycle. -->
+    <button class="exit-menu-btn" id="exit-menu-btn" title="Return to mode picker">
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9,3 4,8 9,13"/>
+        <line x1="4" y1="8" x2="14" y2="8"/>
+      </svg>
+      <span>Menu</span>
     </button>
 
     <!-- Toast host: transient messages (e.g. "inventory limit reached")
@@ -4333,6 +4380,27 @@ function getToken() {
     tokenClient.requestAccessToken({ prompt: '', login_hint: currentUserEmail || '' });
   });
 }
+
+// Exit to Menu: return to mode picker (step 2) without signing out.
+// The Drive token and user email are preserved so the user can re-enter
+// any mode without triggering a new Google auth popup.
+document.getElementById('exit-menu-btn').addEventListener('click', () => {
+  // Hide the designer, show the login overlay at step 2.
+  document.getElementById('app').style.visibility = 'hidden';
+  document.getElementById('login-overlay').classList.remove('hidden');
+
+  // Clear any in-progress project state so re-entry starts clean.
+  currentProject = null;
+  appMode = null;
+
+  // Reset right-panel save UI so it's neutral for the next session.
+  document.getElementById('save-project-mode').style.display = 'none';
+  document.getElementById('save-freeplay-mode').style.display = 'none';
+  document.getElementById('project-name-input').value = '';
+
+  // Go straight to the mode picker — user is still signed in.
+  showStep(2);
+});
 
 // Sign-out: revoke token, clear state, show login overlay again.
 document.getElementById('sign-out-btn').addEventListener('click', () => {
