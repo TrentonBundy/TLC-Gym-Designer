@@ -169,6 +169,73 @@
   .artifact .name { font-size: 13px; font-weight: 600; color: var(--ink); }
   .artifact .meta { font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
 
+  .notes-list { display: flex; flex-direction: column; gap: 4px; }
+  .note-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .note-item:hover {
+    border-color: #e2572b;
+    background: var(--paper-tint);
+  }
+  .note-item.active {
+    border-color: #e2572b;
+    background: rgba(226, 87, 43, 0.12);
+  }
+  .note-item .note-badge {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e2572b;
+    color: #fff1ea;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .note-item .note-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .note-edit-icon-btn {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--ink-dim);
+    cursor: pointer;
+    padding: 0;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .note-edit-icon-btn:hover {
+    color: #e2572b;
+    border-color: #e2572b;
+    background: rgba(226, 87, 43, 0.1);
+  }
+
   .btn {
     display: inline-flex;
     align-items: center;
@@ -208,6 +275,30 @@
   .btn-stack { display: flex; flex-direction: column; gap: 6px; }
 
   #canvas-wrap { position: relative; background: #2e4870; }
+
+  /* Note hover tooltip — follows the cursor when hovering a note badge. */
+  .note-tooltip {
+    position: absolute;
+    z-index: 50;
+    max-width: 260px;
+    background: rgba(53, 16, 10, 0.96);
+    border: 1px solid #e2572b;
+    color: #fff1ea;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 8px 11px;
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .note-tooltip .note-tooltip-num {
+    display: inline-block;
+    font-weight: 800;
+    color: #ffb89e;
+    margin-right: 5px;
+  }
   #canvas { display: block; width: 100%; height: 100%; }
 
   .hud {
@@ -1274,7 +1365,7 @@
   }
 </style>
 
-<div id="app-version">V260629-5</div>
+<div id="app-version">V260630-6</div>
 
 <div id="login-overlay">
 
@@ -1396,6 +1487,14 @@
     </div>
 
     <div class="section">
+      <h2>Markup</h2>
+      <button class="btn" id="add-note-btn" style="width:100%;">+ Add Note</button>
+      <div style="font-size:10px;color:var(--ink-dim);margin-top:6px;line-height:1.4;">
+        Drops a floating note on the floor. Drag to position, click to edit the text.
+      </div>
+    </div>
+
+    <div class="section">
       <h2>Inventory</h2>
       <div class="inventory-list" id="inventory-list"></div>
       <div style="font-size:10px;color:var(--ink-dim);margin-top:7px;line-height:1.4;">
@@ -1422,6 +1521,10 @@
   <!-- CENTER: 3D CANVAS -->
   <main id="canvas-wrap">
     <canvas id="canvas"></canvas>
+
+    <!-- Note hover tooltip — shown when hovering over a note's numbered
+         floor badge. Positioned absolutely, follows the cursor. -->
+    <div id="note-tooltip" class="note-tooltip" style="display:none;"></div>
 
     <button class="tutorial-btn" id="tutorial-btn" title="Open tutorial">
       <span class="icon">i</span>
@@ -1556,11 +1659,11 @@
       <h2>Selection</h2>
       <div class="selected-info" id="selected-info"><div class="none">Nothing selected</div></div>
       <div id="selected-controls" style="display:none; margin-top:10px;">
-        <div class="control-row">
+        <div class="control-row" id="label-row">
           <label>Label</label>
           <input type="text" id="label-input" class="text-in" style="width:60%;" placeholder="(none)" maxlength="40" />
         </div>
-        <div class="control-row">
+        <div class="control-row" id="rot-row">
           <label>Rotation (°)</label>
           <input type="number" id="rot-input" step="15" />
         </div>
@@ -1577,6 +1680,12 @@
           <button class="btn danger" id="delete-btn">Delete</button>
         </div>
       </div>
+    </div>
+
+    <div class="section">
+      <h2>Notes</h2>
+      <div id="notes-list" class="notes-list"></div>
+      <div id="notes-list-empty" style="font-size:11px;color:var(--ink-dim);font-style:italic;">No notes on this layout yet.</div>
     </div>
 
     <div class="section">
@@ -1639,6 +1748,29 @@
     <div id="switch-project-list" style="display:flex;flex-direction:column;gap:2px;max-height:280px;overflow-y:auto;"></div>
     <div id="switch-project-error" style="font-size:12px;color:var(--danger);"></div>
     <button class="btn" id="switch-project-cancel" style="margin-top:4px;">Cancel</button>
+  </div>
+</div>
+
+<!-- NOTE EDIT MODAL — popup editor for annotation text, opened by clicking
+     a note in the 3D view, a Notes-list entry, the Selection panel's Edit
+     Note button, or right after placing a new note. -->
+<div id="note-edit-overlay" style="display:none;position:fixed;inset:0;z-index:8200;background:rgba(10,20,40,0.85);align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid #e2572b;border-radius:10px;padding:28px 30px;max-width:440px;width:90%;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div id="note-edit-badge" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#e2572b;color:#fff1ea;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;">1</div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink);">Edit Note</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;">
+      <div id="note-edit-char-count" style="font-size:10px;color:var(--ink-dim);font-family:'JetBrains Mono',monospace;">0/200</div>
+    </div>
+    <textarea id="note-edit-textarea" class="text-in" style="width:100%;min-height:110px;resize:vertical;font-family:inherit;font-size:13px;box-sizing:border-box;padding:10px;" maxlength="200" placeholder="Type the note…"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px;">
+      <button class="btn danger" id="note-edit-delete-btn" style="width:auto;flex:none;">Delete Note</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" id="note-edit-cancel-btn" style="width:auto;flex:none;">Cancel</button>
+        <button class="btn primary" id="note-edit-save-btn" style="width:auto;flex:none;">Save</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1895,6 +2027,15 @@ const CATALOG = {
     seats: 0,
     autoSeats: 0,
     meta: '48" × 96" × 5" · max 4'
+  },
+  annotation: {
+    id: 'annotation',
+    name: 'Note',
+    type: 'annotation',
+    color: 0xe2572b, // distinct red/orange so notes stand out from equipment labels
+    seats: 0,
+    autoSeats: 0,
+    meta: 'markup note'
   }
 };
 
@@ -2311,12 +2452,99 @@ label.position.set(DOOR_CENTER_X, 0.02, westZ + 3);
 referenceGroup.add(label);
 
 //=============================================================================
+// ANNOTATIONS — freeform markup notes ("This corner needs serving prep")
+//=============================================================================
+// Rendered as a THREE.Sprite (camera-facing billboard) so the text stays
+// legible from any angle — straight down in Top-Down view, or up close in
+// Ground Level / Isometric. Unlike equipment labels (flat planes glued to a
+// table top), annotations are free-floating markup and are not tied to any
+// piece of equipment.
+
+// Height above the floor the note sprite's center sits at. Tall enough to
+// clear equipment and chairs so it doesn't get visually buried.
+const ANNOTATION_HEIGHT_FT = 3.2;
+
+// Build (or rebuild) the canvas-texture sprite for a note's floor marker.
+// Renders a small numbered badge (not the full text) — full text at world
+// scale becomes illegible at typical top-down zoom and on the printed PDF,
+// so the badge is a pointer: "see note 3" in the legend on PDF page 2 /
+// the right-panel Notes list, which shows the actual text.
+function buildAnnotationSprite(number) {
+  const PX_PER_FT = 90;
+  const DIAMETER_FT = 1.4; // fixed on-floor size — readable at any zoom, doesn't grow with text length
+  const cw = DIAMETER_FT * PX_PER_FT;
+  const ch = cw;
+
+  const canvas2d = document.createElement('canvas');
+  canvas2d.width = cw;
+  canvas2d.height = ch;
+  const ctx = canvas2d.getContext('2d');
+
+  const cx = cw / 2, cy = ch / 2;
+  const r = cw / 2 - 4;
+
+  // Solid circular badge — distinct red/orange so notes read as markup,
+  // not equipment labeling (which uses the gold pill style).
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#e2572b';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#fff1ea';
+  ctx.stroke();
+
+  // Small "pin" tail pointing down so it visually anchors to a floor point.
+  const tailW = 16, tailH = 12;
+  ctx.beginPath();
+  ctx.moveTo(cx - tailW / 2, cy + r - 2);
+  ctx.lineTo(cx + tailW / 2, cy + r - 2);
+  ctx.lineTo(cx, cy + r - 2 + tailH);
+  ctx.closePath();
+  ctx.fillStyle = '#e2572b';
+  ctx.fill();
+
+  // Number, bold and centered.
+  const label = String(number);
+  const fontPx = label.length > 2 ? Math.round(r * 0.85) : Math.round(r * 1.05);
+  ctx.fillStyle = '#fff1ea';
+  ctx.font = `bold ${fontPx}px 'Inter', Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, cy + 1);
+
+  const texture = new THREE.CanvasTexture(canvas2d);
+  texture.anisotropy = 16;
+  texture.needsUpdate = true;
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,   // always visible, never hidden behind equipment
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  const sprite = new THREE.Sprite(material);
+
+  // Fixed world size regardless of digit count — badge never grows.
+  sprite.scale.set(DIAMETER_FT, DIAMETER_FT, 1);
+
+  // Account for the tail pushing the visual anchor down — shift the sprite's
+  // center up slightly so the tail (not the badge circle) points at the pin point.
+  sprite.center.set(0.5, (tailH / 2) / ch + 0); // bias toward bottom slightly
+
+  sprite.renderOrder = 1000;
+  sprite.userData.kind = 'annotation';
+  return sprite;
+}
+
+//=============================================================================
 // ARTIFACT FACTORY
 //=============================================================================
 const artifactsRoot = new THREE.Group();
 scene.add(artifactsRoot);
 
 let nextId = 1;
+let nextNoteNumber = 1; // sequential badge numbers for annotations; persists across the session
 const artifacts = []; // { id, kind, mesh, rotation, position, children: [chair meshes] }
 
 function buildArtifactMesh(kind) {
@@ -2469,7 +2697,7 @@ function maxChairsFor(kind) {
 
 function placeChairsAround(artifact, overrideCount) {
   const def = CATALOG[artifact.kind];
-  if (def.autoSeats <= 0) return;
+  if (def.type === 'annotation' || def.autoSeats <= 0) return;
 
   // Remove existing auto-chairs
   artifact.chairs.forEach(c => artifact.mesh.remove(c));
@@ -2664,6 +2892,9 @@ function buildLabelMesh(text, art) {
 // Apply or update a label on the given artifact. Pass an empty string to
 // remove the label.
 function setArtifactLabel(art, text) {
+  // Annotations don't use the generic equipment-label system — their text
+  // IS the sprite. Use setAnnotationText() instead.
+  if (art.kind === 'annotation') { setAnnotationText(art, text); return; }
   text = (text || '').trim();
   // Remove any existing label first (and dispose its GPU resources).
   if (art.labelSprite) {
@@ -2680,6 +2911,15 @@ function setArtifactLabel(art, text) {
     art.labelSprite = buildLabelMesh(text, art);
     art.mesh.add(art.labelSprite);
   }
+}
+
+// Update an annotation's text content. The floor badge only displays the
+// note's stable number (not the text), so editing text never needs to
+// rebuild the sprite — just update the stored text. The actual content is
+// shown in the right-panel Notes list and the PDF legend.
+function setAnnotationText(art, text) {
+  text = (text || '').trim() || 'New note';
+  art.labelText = text;
 }
 
 //=============================================================================
@@ -2789,6 +3029,10 @@ function getSnapFootprint(art, x, z, rotY) {
   const def = CATALOG[art.kind];
   const px = (x !== undefined) ? x : art.mesh.position.x;
   const pz = (z !== undefined) ? z : art.mesh.position.z;
+  // Annotations never participate in edge-snapping (zero-size, like clash).
+  if (def.type === 'annotation') {
+    return { kind: 'circle', cx: px, cz: pz, r: 0 };
+  }
   const rot = (rotY !== undefined) ? rotY : art.mesh.rotation.y;
   if (def.type === 'round') {
     return { kind: 'circle', cx: px, cz: pz, r: def.diameter / 2 };
@@ -2859,6 +3103,12 @@ function getFootprint(art, x, z, rotY) {
   const def = CATALOG[art.kind];
   const px = (x !== undefined) ? x : art.mesh.position.x;
   const pz = (z !== undefined) ? z : art.mesh.position.z;
+  // Annotations are markup, not equipment — they never participate in clash
+  // detection so they can be freely placed anywhere, including overlapping
+  // other items (e.g. labeling a corner that already has a table in it).
+  if (def.type === 'annotation') {
+    return { kind: 'circle', cx: px, cz: pz, r: 0 };
+  }
   const rot = (rotY !== undefined) ? rotY : art.mesh.rotation.y;
   if (def.type === 'round') {
     return { kind: 'circle', cx: px, cz: pz, r: def.diameter / 2 + CLASH_PAD };
@@ -2955,6 +3205,36 @@ function wouldClash(art, x, z, rotY, ignore = []) {
 }
 
 function addArtifact(kind, x = 0, z = 0, rotY = 0, opts = {}) {
+  // Annotations (markup notes) are a lightweight artifact type — no
+  // inventory tracking, no chairs, no clash checks. The "label" passed in
+  // opts.label is the note text itself (annotations have no separate
+  // equipment + label; the sprite IS the text). Each note gets a stable
+  // sequential number (badge shown on the floor, referenced in the PDF
+  // legend) — pass opts.noteNumber to preserve a saved number on load,
+  // otherwise a fresh one is assigned.
+  if (kind === 'annotation') {
+    const text = opts.label || 'New note';
+    const number = (opts.noteNumber !== undefined) ? opts.noteNumber : nextNoteNumber++;
+    if (number >= nextNoteNumber) nextNoteNumber = number + 1; // keep counter ahead of any loaded numbers
+    const mesh = buildAnnotationSprite(number);
+    mesh.position.set(x, ANNOTATION_HEIGHT_FT, z);
+    artifactsRoot.add(mesh);
+    const artifact = {
+      id: nextId++,
+      kind,
+      mesh,
+      chairs: [],
+      labelText: text,
+      labelSprite: null,
+      chairCount: 0,
+      noteNumber: number
+    };
+    mesh.userData.artifactId = artifact.id;
+    artifacts.push(artifact);
+    updateStats();
+    return artifact;
+  }
+
   // Inventory limits are advisory only — placement is always allowed.
   // The inventory panel turns red when limits are exceeded so users can
   // see at a glance that the design exceeds available stock.
@@ -3114,10 +3394,19 @@ canvas.addEventListener('mousedown', (e) => {
         dragMode = 'place';
         captureUndoSnapshot(); // snapshot position before drag starts
         // Anchor offset: where on the picked item the cursor grabbed.
+        // Annotations are billboard sprites floating above the floor — the
+        // raycast hit point lands on the tilted sprite plane, not the floor,
+        // so for annotations we re-project against the floor instead to get
+        // a correct grab offset (otherwise dragging starts with a visible jump).
+        let grabPoint = intersect.point;
+        if (intersect.artifact.kind === 'annotation') {
+          const floorPt = pickFloorFromEvent(e);
+          if (floorPt) grabPoint = floorPt;
+        }
         placeOffset.set(
-          intersect.artifact.mesh.position.x - intersect.point.x,
+          intersect.artifact.mesh.position.x - grabPoint.x,
           0,
-          intersect.artifact.mesh.position.z - intersect.point.z
+          intersect.artifact.mesh.position.z - grabPoint.z
         );
         // Snapshot every selected item's starting position so we can compute
         // group translation relative to the primary's movement.
@@ -3137,6 +3426,17 @@ canvas.addEventListener('mousedown', (e) => {
   }
   dragStart.x = dragLast.x = e.clientX;
   dragStart.y = dragLast.y = e.clientY;
+});
+
+// Double-click a note badge to open the popup editor directly — faster
+// than select-then-click-Edit-Note for the common case of just wanting to
+// read/change what a note says.
+canvas.addEventListener('dblclick', (e) => {
+  const intersect = pickFromEvent(e);
+  if (intersect.artifact && intersect.artifact.kind === 'annotation') {
+    selectArtifact(intersect.artifact);
+    openNoteEditModal(intersect.artifact);
+  }
 });
 
 const placeOffset = new THREE.Vector3();
@@ -3259,6 +3559,55 @@ window.addEventListener('mouseup', () => {
   dragMode = null;
 });
 
+// ── Note hover tooltip ──────────────────────────────────────────────────
+// Shows the full note text when hovering its floor badge — addresses
+// readability without needing to click. Only active when not dragging
+// (dragMode is truthy during orbit/pan/place) so it doesn't fight with
+// those interactions or do extra raycasts mid-drag.
+const noteTooltip = document.getElementById('note-tooltip');
+let hoveredNoteArt = null;
+
+canvas.addEventListener('mousemove', (e) => {
+  if (dragMode) {
+    if (noteTooltip.style.display !== 'none') noteTooltip.style.display = 'none';
+    hoveredNoteArt = null;
+    return;
+  }
+  setMouseFromEvent(e);
+  raycaster.setFromCamera(mouseNDC, camera);
+  const noteMeshes = artifacts.filter(a => a.kind === 'annotation').map(a => a.mesh);
+  const hits = noteMeshes.length ? raycaster.intersectObjects(noteMeshes, false) : [];
+
+  if (hits.length) {
+    const hitMesh = hits[0].object;
+    const art = artifacts.find(a => a.mesh === hitMesh);
+    if (art) {
+      hoveredNoteArt = art;
+      const wrapRect = canvas.parentElement.getBoundingClientRect();
+      const localX = e.clientX - wrapRect.left;
+      const localY = e.clientY - wrapRect.top;
+      noteTooltip.innerHTML = `<span class="note-tooltip-num">#${art.noteNumber}</span>${escapeHtml(art.labelText || '(empty note)')}`;
+      // Offset so the tooltip doesn't sit directly under the cursor.
+      noteTooltip.style.left = (localX + 16) + 'px';
+      noteTooltip.style.top = (localY + 16) + 'px';
+      noteTooltip.style.display = 'block';
+      canvas.style.cursor = 'pointer';
+      return;
+    }
+  }
+  if (hoveredNoteArt) {
+    hoveredNoteArt = null;
+    canvas.style.cursor = '';
+  }
+  noteTooltip.style.display = 'none';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  noteTooltip.style.display = 'none';
+  hoveredNoteArt = null;
+  canvas.style.cursor = '';
+});
+
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   const factor = e.deltaY > 0 ? 1.1 : 0.9;
@@ -3282,10 +3631,18 @@ canvas.addEventListener('touchstart', (e) => {
         updateSelectionUI();
       }
       touchState = { mode: 'place' };
+      // Same floor-projection fix as the mouse handler: annotations are
+      // billboard sprites floating above the floor, so re-project the grab
+      // point onto the floor instead of using the tilted sprite-plane hit.
+      let grabPoint = intersect.point;
+      if (intersect.artifact.kind === 'annotation') {
+        const floorPt = pickFloorFromEvent(t);
+        if (floorPt) grabPoint = floorPt;
+      }
       placeOffset.set(
-        intersect.artifact.mesh.position.x - intersect.point.x,
+        intersect.artifact.mesh.position.x - grabPoint.x,
         0,
-        intersect.artifact.mesh.position.z - intersect.point.z
+        intersect.artifact.mesh.position.z - grabPoint.z
       );
       dragStartPositions.clear();
       selectedArtifacts.forEach(a => {
@@ -3404,10 +3761,12 @@ function pickFromEvent(e) {
   setMouseFromEvent(e);
   raycaster.setFromCamera(mouseNDC, camera);
 
-  // Intersect against artifacts first
-  const meshes = [];
-  artifacts.forEach(a => a.mesh.traverse(c => { if (c.isMesh) meshes.push(c); }));
-  const artHits = raycaster.intersectObjects(meshes, false);
+  // Intersect against artifacts first. Includes both regular Meshes
+  // (equipment) and Sprites (annotation markup notes) — Sprite uses
+  // isSprite, not isMesh, so both flags are checked.
+  const pickables = [];
+  artifacts.forEach(a => a.mesh.traverse(c => { if (c.isMesh || c.isSprite) pickables.push(c); }));
+  const artHits = raycaster.intersectObjects(pickables, false);
   if (artHits.length) {
     // Walk up to find the artifact root
     let obj = artHits[0].object;
@@ -3450,7 +3809,15 @@ function addToSelection(art) {
     return;
   }
   const ring = makeSelectionRing(CATALOG[art.kind]);
-  art.mesh.add(ring);
+  if (art.kind === 'annotation') {
+    // The note sprite floats above the floor — the ring should mark its
+    // floor anchor point, so it's a sibling in artifactsRoot, not a child
+    // of the sprite. Position is kept in sync every frame (see tick()).
+    ring.position.set(art.mesh.position.x, 0.06, art.mesh.position.z);
+    artifactsRoot.add(ring);
+  } else {
+    art.mesh.add(ring);
+  }
   ringsByArtifact.set(art, ring);
   selectedArtifacts.add(art);
   selectedArtifact = art;
@@ -3498,15 +3865,24 @@ function selectArtifact(art, additive = false) {
 }
 
 function updateSelectionUI() {
+  // Sync the Notes list's highlighted entry without a full re-render (which
+  // would be wasteful on every selection change and could interrupt a
+  // user's in-progress click).
+  if (typeof syncNotesListActiveState === 'function') syncNotesListActiveState();
+
   const info = document.getElementById('selected-info');
   const ctrls = document.getElementById('selected-controls');
   const labelInput = document.getElementById('label-input');
+  const labelRow = document.getElementById('label-row');
+  const rotRow = document.getElementById('rot-row');
   const chairsRow = document.getElementById('chairs-row');
   const chairsCount = document.getElementById('chairs-count');
   if (selectedArtifacts.size === 0) {
     info.innerHTML = '<div class="none">Nothing selected</div>';
     ctrls.style.display = 'none';
     if (chairsRow) chairsRow.style.display = 'none';
+    if (labelRow) labelRow.style.display = 'flex';
+    if (rotRow) rotRow.style.display = 'flex';
     if (labelInput) {
       labelInput.value = '';
       labelInput.dataset.boundId = '';
@@ -3526,6 +3902,8 @@ function updateSelectionUI() {
     `;
     ctrls.style.display = 'block';
     if (chairsRow) chairsRow.style.display = 'none';
+    if (labelRow) labelRow.style.display = 'flex';
+    if (rotRow) rotRow.style.display = 'flex';
     if (selectedArtifact) {
       document.getElementById('rot-input').value =
         Math.round((selectedArtifact.mesh.rotation.y * 180 / Math.PI) % 360);
@@ -3539,6 +3917,30 @@ function updateSelectionUI() {
   }
   // Single-select.
   const def = CATALOG[selectedArtifact.kind];
+
+  // Annotations show position info and a hint to edit via the popup —
+  // no inline text editor here anymore (double-click the badge in the 3D
+  // view, or use the pencil icon in the Notes list, to edit text).
+  if (def.type === 'annotation') {
+    info.innerHTML = `
+      <div class="name">Note ${selectedArtifact.noteNumber}</div>
+      <div style="margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:11px;">
+        X ${selectedArtifact.mesh.position.x.toFixed(1)}'  ·
+        Z ${selectedArtifact.mesh.position.z.toFixed(1)}'
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--ink-dim);line-height:1.4;">
+        Double-click the note on the floor to edit its text.
+      </div>
+    `;
+    ctrls.style.display = 'block';
+    if (labelRow) labelRow.style.display = 'none';
+    if (rotRow) rotRow.style.display = 'none';
+    if (chairsRow) chairsRow.style.display = 'none';
+    return;
+  }
+
+  if (labelRow) labelRow.style.display = 'flex';
+  if (rotRow) rotRow.style.display = 'flex';
   info.innerHTML = `
     <div class="name">${def.name}</div>
     <div>${def.meta}</div>
@@ -3607,6 +4009,23 @@ document.getElementById('delete-btn').addEventListener('click', () => {
   Array.from(selectedArtifacts).forEach(a => _origRemoveArtifact(a));
 });
 
+// Add Note — drops a new annotation near the camera target (same spawn
+// behavior as equipment) and immediately selects it so the Note text box
+// in the Selection panel is ready for typing.
+document.getElementById('add-note-btn').addEventListener('click', () => {
+  captureUndoSnapshot();
+  const x = snapValue(cam.target.x);
+  const z = snapValue(cam.target.z);
+  const a = addArtifact('annotation', x, z, 0, { label: '' });
+  if (a) {
+    selectArtifact(a);
+    // Switch to the Layout tab if Comments happens to be active, then open
+    // the popup editor so the user can type the note text immediately.
+    if (typeof switchTab === 'function') switchTab('layout');
+    openNoteEditModal(a);
+  }
+});
+
 // Live label editing — every keystroke rebuilds the floating label sprite on
 // the currently selected piece. Only meaningful in single-select.
 const _labelInput = document.getElementById('label-input');
@@ -3615,6 +4034,92 @@ if (_labelInput) {
     if (selectedArtifacts.size !== 1 || !selectedArtifact) return;
     setArtifactLabel(selectedArtifact, e.target.value);
   });
+}
+
+//=============================================================================
+// NOTE EDIT MODAL — popup editor for annotation text
+//=============================================================================
+let noteEditTargetArt = null; // the annotation currently open in the modal
+
+const noteEditOverlay  = document.getElementById('note-edit-overlay');
+const noteEditTextarea = document.getElementById('note-edit-textarea');
+const noteEditBadge    = document.getElementById('note-edit-badge');
+const noteEditCharCount = document.getElementById('note-edit-char-count');
+
+function updateNoteEditCharCount() {
+  const max = noteEditTextarea.maxLength > 0 ? noteEditTextarea.maxLength : 200;
+  const len = noteEditTextarea.value.length;
+  noteEditCharCount.textContent = `${len}/${max}`;
+  noteEditCharCount.style.color = (len >= max) ? 'var(--danger, #e2572b)' : 'var(--ink-dim)';
+}
+
+// Opens the popup editor for the given annotation artifact.
+function openNoteEditModal(art) {
+  if (!art || art.kind !== 'annotation') return;
+  noteEditTargetArt = art;
+  noteEditBadge.textContent = String(art.noteNumber);
+  noteEditTextarea.value = art.labelText || '';
+  updateNoteEditCharCount();
+  noteEditOverlay.style.display = 'flex';
+  // Hide the hover tooltip if it happened to be showing — the modal makes
+  // it redundant and it would otherwise float oddly behind the dialog.
+  if (noteTooltip) noteTooltip.style.display = 'none';
+  // Defer focus until the modal is visible.
+  setTimeout(() => { noteEditTextarea.focus(); noteEditTextarea.select(); }, 30);
+}
+
+function closeNoteEditModal() {
+  noteEditOverlay.style.display = 'none';
+  noteEditTargetArt = null;
+}
+
+noteEditTextarea.addEventListener('input', updateNoteEditCharCount);
+
+document.getElementById('note-edit-save-btn').addEventListener('click', () => {
+  if (!noteEditTargetArt) { closeNoteEditModal(); return; }
+  setAnnotationText(noteEditTargetArt, noteEditTextarea.value);
+  updateNotesListItemText(noteEditTargetArt);
+  closeNoteEditModal();
+});
+
+document.getElementById('note-edit-cancel-btn').addEventListener('click', closeNoteEditModal);
+
+document.getElementById('note-edit-delete-btn').addEventListener('click', () => {
+  if (!noteEditTargetArt) { closeNoteEditModal(); return; }
+  const art = noteEditTargetArt;
+  closeNoteEditModal();
+  captureUndoSnapshot();
+  _origRemoveArtifact(art);
+});
+
+// Click outside the modal dialog closes it (treated as Cancel).
+noteEditOverlay.addEventListener('click', (e) => {
+  if (e.target === noteEditOverlay) closeNoteEditModal();
+});
+
+// Esc closes the note edit modal; Ctrl/Cmd+Enter saves — only when this
+// modal is the one currently open (checked via display, not a global
+// "active modal" flag, to keep this self-contained).
+window.addEventListener('keydown', (e) => {
+  if (noteEditOverlay.style.display !== 'flex') return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeNoteEditModal();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('note-edit-save-btn').click();
+  }
+});
+
+// Updates just one note-item's displayed text in the Notes list, without
+// rebuilding the whole list.
+function updateNotesListItemText(art) {
+  const host = document.getElementById('notes-list');
+  if (!host) return;
+  const item = host.querySelector(`.note-item[data-artifact-id="${art.id}"]`);
+  if (!item) return;
+  const textEl = item.querySelector('.note-text');
+  if (textEl) textEl.textContent = art.labelText || '(empty note)';
 }
 
 //---------- Arrow-key / button nudging ----------
@@ -3965,6 +4470,8 @@ function updateStats() {
   // Whenever artifacts change, refresh the inventory panel so the bars
   // reflect current usage.
   if (typeof renderInventoryPanel === 'function') renderInventoryPanel();
+  // ...and refresh the Notes list so it reflects additions/edits/deletions.
+  if (typeof renderNotesList === 'function') renderNotesList();
 }
 
 //=============================================================================
@@ -4149,6 +4656,7 @@ function renderArtifactList() {
   const list = document.getElementById('artifact-list');
   list.innerHTML = '';
   Object.values(CATALOG).forEach(def => {
+    if (def.type === 'annotation') return; // notes have their own "Add Note" control, not catalog equipment
     const div = document.createElement('div');
     div.className = 'artifact';
     div.dataset.kind = def.id;
@@ -4237,6 +4745,79 @@ function renderInventoryPanel() {
     host.appendChild(row);
   });
 }
+
+// Renders the right-panel Notes list — every annotation's number and full
+// text, sorted by note number (creation order), matching the PDF legend's
+// ordering. Clicking an entry selects that note and frames the camera on
+// it so the user can quickly jump from "what does note 3 say" to seeing it
+// on the floor.
+function renderNotesList() {
+  const host = document.getElementById('notes-list');
+  const empty = document.getElementById('notes-list-empty');
+  if (!host || !empty) return;
+
+  const notes = artifacts
+    .filter(a => a.kind === 'annotation')
+    .slice()
+    .sort((a, b) => (a.noteNumber || 0) - (b.noteNumber || 0));
+
+  if (notes.length === 0) {
+    host.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  host.innerHTML = '';
+  notes.forEach(note => {
+    const item = document.createElement('div');
+    item.className = 'note-item';
+    item.dataset.artifactId = String(note.id);
+    if (selectedArtifact === note) item.classList.add('active');
+    const text = note.labelText || '(empty note)';
+    item.innerHTML = `
+      <div class="note-badge">${note.noteNumber}</div>
+      <div class="note-text"></div>
+      <button class="note-edit-icon-btn" title="Edit note" aria-label="Edit note">
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11.5 2.5l2 2L5 13l-3 1 1-3z"/>
+        </svg>
+      </button>
+    `;
+    // Set text via textContent (not innerHTML) so note content can never
+    // be interpreted as markup — notes are free-typed user text.
+    item.querySelector('.note-text').textContent = text;
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.note-edit-icon-btn')) return; // handled separately below
+      selectArtifact(note);
+      // Pan the camera target to the note so it's visible, without
+      // changing zoom/angle — keeps the user oriented.
+      cam.target.set(note.mesh.position.x, 0, note.mesh.position.z);
+      updateCamera();
+    });
+    item.querySelector('.note-edit-icon-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectArtifact(note);
+      openNoteEditModal(note);
+    });
+    host.appendChild(item);
+  });
+}
+
+// Lightweight companion to renderNotesList(): just toggles which note-item
+// shows as "active" based on the current selection, without rebuilding the
+// DOM. Called on every selection change (renderNotesList itself only runs
+// when artifacts are added/removed/loaded, via updateStats()).
+function syncNotesListActiveState() {
+  const host = document.getElementById('notes-list');
+  if (!host) return;
+  const activeId = (selectedArtifacts.size === 1 && selectedArtifact && selectedArtifact.kind === 'annotation')
+    ? String(selectedArtifact.id)
+    : null;
+  host.querySelectorAll('.note-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.artifactId === activeId);
+  });
+}
 renderArtifactList();
 
 document.getElementById('auto-chairs').addEventListener('change', (e) => {
@@ -4312,7 +4893,8 @@ function serializeLayout() {
     z: +a.mesh.position.z.toFixed(3),
     rotY: +a.mesh.rotation.y.toFixed(4),
     label: a.labelText || '',
-    chairCount: (a.chairCount !== undefined) ? a.chairCount : maxChairsFor(a.kind)
+    chairCount: (a.chairCount !== undefined) ? a.chairCount : maxChairsFor(a.kind),
+    noteNumber: (a.kind === 'annotation') ? a.noteNumber : undefined
   }));
 }
 
@@ -4325,7 +4907,8 @@ function loadLayout(data) {
     const a = addArtifact(item.kind, item.x, item.z, item.rotY, {
       silent: true,
       label: item.label || '',
-      chairCount: item.chairCount
+      chairCount: item.chairCount,
+      noteNumber: item.noteNumber
     });
     if (!a) skipped[item.kind] = (skipped[item.kind] || 0) + 1;
   });
@@ -5413,6 +5996,74 @@ window.addEventListener('load', () => {
   tryInit();
 });
 
+// Notes legend — lists every annotation's number alongside its full text,
+// so the small numbered badges on the printed floor plan (page 1) can be
+// matched back to what they actually say. Sorted by note number (creation
+// order) for a stable, predictable reading order. Adds a new page if
+// there isn't room left on the current one, or if there are no notes at
+// all, does nothing. Returns the new y cursor position (or the page height
+// if it added a page, for callers building further sections — currently
+// unused, but keeps the function composable).
+function addNotesLegendToPdf(pdf, pageW, pageH, margin, startY) {
+  const notes = artifacts
+    .filter(a => a.kind === 'annotation')
+    .slice()
+    .sort((a, b) => (a.noteNumber || 0) - (b.noteNumber || 0));
+  if (notes.length === 0) return startY;
+
+  let y = startY;
+  const bottomLimit = pageH - margin;
+  const textWrapWidth = pageW - margin * 2 - 34; // leave room for the number badge column
+
+  // Start a fresh page for the legend if we're already close to the bottom
+  // of the current page, so headings don't get orphaned.
+  if (y > bottomLimit - 60) {
+    pdf.addPage();
+    y = margin + 30;
+  }
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(12);
+  pdf.text('Notes', margin, y);
+  y += 10;
+  pdf.setLineWidth(0.75);
+  pdf.line(margin, y, pageW - margin, y);
+  y += 20;
+
+  notes.forEach(note => {
+    const text = note.labelText || '(empty note)';
+    const lines = pdf.splitTextToSize(text, textWrapWidth);
+    const blockHeight = 4 + lines.length * 13;
+
+    // Page-break if this note's block won't fit on the current page.
+    if (y + blockHeight > bottomLimit) {
+      pdf.addPage();
+      y = margin + 30;
+    }
+
+    // Numbered badge — small filled circle matching the on-floor marker color.
+    const badgeR = 9;
+    const badgeCx = margin + badgeR;
+    const badgeCy = y - 4;
+    pdf.setFillColor(226, 87, 43); // #e2572b
+    pdf.circle(badgeCx, badgeCy, badgeR, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255, 241, 234);
+    pdf.text(String(note.noteNumber), badgeCx, badgeCy + 3, { align: 'center' });
+    pdf.setTextColor(0);
+
+    // Note text, wrapped, starting just right of the badge.
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.text(lines, margin + 26, y);
+
+    y += blockHeight + 8;
+  });
+
+  return y;
+}
+
 // Build the PDF as a base64 data string (no download triggered).
 function buildPdfBase64(eventName) {
   const { jsPDF } = window.jspdf;
@@ -5465,6 +6116,7 @@ function buildPdfBase64(eventName) {
   const tally = {};
   let seats = 0;
   artifacts.forEach(a => {
+    if (a.kind === 'annotation') return; // markup notes aren't equipment — skip
     const def = CATALOG[a.kind];
     let artSeats;
     if (def.type === 'round' || def.type === 'rect') {
@@ -5500,6 +6152,9 @@ function buildPdfBase64(eventName) {
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(11);
   pdf.text(`TOTAL SEATS: ${seats}`, margin, y);
+
+  // Notes legend — maps each numbered floor badge back to its full text.
+  y = addNotesLegendToPdf(pdf, pageW, pageH, margin, y + 30);
 
   // Return raw base64 (no data: prefix) for Drive upload
   return pdf.output('datauristring').split(',')[1];
@@ -5698,6 +6353,7 @@ document.getElementById('export-pdf').addEventListener('click', () => {
   pdf.setTextColor(110); pdf.text(eventName, margin, margin + 22); pdf.setTextColor(0);
   const tally = {}; let seats = 0;
   artifacts.forEach(a => {
+    if (a.kind === 'annotation') return; // markup notes aren't equipment — skip
     const def = CATALOG[a.kind];
     let artSeats;
     if (def.type === 'round' || def.type === 'rect') {
@@ -5722,6 +6378,10 @@ document.getElementById('export-pdf').addEventListener('click', () => {
   y += 6; pdf.line(margin, y, pageW - margin, y); y += 18;
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
   pdf.text(`TOTAL SEATS: ${seats}`, margin, y);
+
+  // Notes legend — maps each numbered floor badge back to its full text.
+  addNotesLegendToPdf(pdf, pageW, pageH, margin, y + 30);
+
   const slug = eventName.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'layout';
   pdf.save(`${eventName}.pdf`);
 });
@@ -5746,6 +6406,17 @@ function tick() {
   if (selectedArtifact && (dragMode === 'place' || (touchState && touchState.mode === 'place'))) {
     updateSelectionUI();
   }
+  // Keep annotation selection rings pinned to the floor under their note
+  // (the ring lives in artifactsRoot, not as a child of the billboard
+  // sprite, since the sprite floats above the floor at ANNOTATION_HEIGHT_FT).
+  selectedArtifacts.forEach(a => {
+    if (a.kind !== 'annotation') return;
+    const ring = ringsByArtifact.get(a);
+    if (ring) {
+      ring.position.x = a.mesh.position.x;
+      ring.position.z = a.mesh.position.z;
+    }
+  });
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
